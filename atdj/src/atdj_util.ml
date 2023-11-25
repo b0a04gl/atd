@@ -18,20 +18,17 @@ let rec unwrap_option env atd_ty =
 
 (* Normalise an ATD type by expanding `top-level' type aliases *)
 let rec norm_ty ?(unwrap_option = false) env atd_ty =
-  let atd_ty = unwrap atd_ty in
   match atd_ty with
+  | Atd.Ast.Name (_, (_, name, _), _) when List.mem name ["bool"; "int"; "float"; "string"; "abstract"] ->
+      atd_ty
   | Atd.Ast.Name (_, (_, name, _), _) ->
-      (match name with
-       | "bool" | "int" | "float" | "string" | "abstract" -> atd_ty
-       | _ ->
-           (match List.assoc name env.module_items with
-            | Some x -> norm_ty env x
-            | None ->
-                eprintf "Warning: unknown type %s\n%!" name;
-                atd_ty)
-      )
-  | Option (_, atd_ty, _) when unwrap_option ->
-      norm_ty env atd_ty
+      (match List.assoc name env.module_items with
+       | Some x -> norm_ty env x
+       | None ->
+           eprintf "Warning: unknown type %s\n%!" name;
+           atd_ty)
+  | Option (_, inner_ty, _) when unwrap_option ->
+      norm_ty env inner_ty
   | _ ->
       atd_ty
 
